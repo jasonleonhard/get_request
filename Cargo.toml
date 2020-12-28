@@ -7,5 +7,6 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = {version = "0.10", features = ["json"]}
-tokio = {version = "0.2", features = ["full"]}
+futures = "0.1"
+hyper = "0.11"
+tokio-core = "0.1"
