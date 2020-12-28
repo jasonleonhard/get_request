@@ -1,6 +1,4 @@
 #![deny(warnings)]
-// This is using the `tokio` runtime. You'll need the following dependency:
-// `tokio = { version = "0.2", features = ["macros"] }`
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
@@ -36,3 +34,6 @@ fn main() {}
 
 // but soon we want to pass a url like so
 // cargo run "https://jasonleonhard.com/pins/11" | jq
+
+// ref: https://github.com/seanmonstar/reqwest/blob/master/Cargo.toml
+// notice of the libraries used here they include hyper... reqwest is a easier way to use hyper
