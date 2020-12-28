@@ -1,35 +1,31 @@
-extern crate futures;
-extern crate hyper;
-extern crate tokio_core;
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Request, Response, Server};
+use std::convert::Infallible;
+use std::net::SocketAddr;
 
-use futures::{Future, Stream};
-use hyper::Client;
-use std::io::{self, Write};
-use tokio_core::reactor::Core;
-
-fn main() {
-    let mut core = Core::new().unwrap();
-    let client = Client::new(&core.handle());
-
-    // https appears not to work
-    let uri = "http://httpbin.org/get".parse().unwrap(); // works
-
-    let work = client.get(uri).and_then(|res| {
-        println!("Response: {}", res.status());
-
-        res.body()
-            .for_each(|chunk| io::stdout().write_all(&chunk).map_err(From::from))
-    });
-    core.run(work).unwrap();
+async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    Ok(Response::new("Hello, World".into()))
 }
 
-// Response: 200 OK
-// {
-//   "args": {},
-//   "headers": {
-//     "Host": "httpbin.org",
-//     "X-Amzn-Trace-Id": "Root=1-5fe95ac3-3cba9c8064c11382772cc264"
-//   },
-//   "origin": "37.120.149.92",
-//   "url": "http://httpbin.org/get"
-// }
+#[tokio::main]
+async fn main() {
+    // We'll bind to 127.0.0.1:3000
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+
+    // A `Service` is needed for every connection, so this
+    // creates one from our `hello_world` function.
+    let make_svc = make_service_fn(|_conn| async {
+        // service_fn converts our function into a `Service`
+        Ok::<_, Infallible>(service_fn(hello_world))
+    });
+
+    let server = Server::bind(&addr).serve(make_svc);
+
+    // Run this server for... forever!
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
+    }
+}
+
+// 127.0.0.1:3000
+// Hello, World
