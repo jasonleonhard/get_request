@@ -1,97 +1,38 @@
 #![deny(warnings)]
-#![warn(rust_2018_idioms)]
-use hyper::{body::HttpBody as _, Client};
-use std::env;
-use tokio::io::{self, AsyncWriteExt as _};
-
-// A simple type alias so as to DRY.
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-
+// This is using the `tokio` runtime. You'll need the following dependency:
+// `tokio = { version = "0.2", features = ["macros"] }`
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
-async fn main() -> Result<()> {
-    pretty_env_logger::init(); // basic logger
-
-    // Some simple CLI args requirements...
-    let url = match env::args().nth(1) {
-        Some(url) => url,
-        None => {
-            println!("Usage: client <url>");
-            return Ok(());
-        }
-    };
-
-    // HTTPS requires picking a TLS implementation, so give a better
-    // warning if the user tries to request an 'https' URL.
-    let url = url.parse::<hyper::Uri>().unwrap();
-    if url.scheme_str() != Some("http") {
-        println!("This example only works with 'http' URLs.");
-        return Ok(());
-    }
-
-    fetch_url(url).await
-}
-
-async fn fetch_url(url: hyper::Uri) -> Result<()> {
-    let client = Client::new();
-    let mut res = client.get(url).await?;
-
-    println!("Response: {}", res.status());
-    println!("Headers: {:#?}\n", res.headers());
-
-    // Stream the body, writing each chunk to stdout as we get it
-    // (instead of buffering and printing at the end).
-    while let Some(next) = res.data().await {
-        let chunk = next?;
-        io::stdout().write_all(&chunk).await?;
-    }
-
-    println!("\n\nDone!");
-
+async fn main() -> Result<(), reqwest::Error> {
+    // let res = reqwest::get("https://hyper.rs").await?;
+    let res = reqwest::get("https://jasonleonhard.com/pins/11").await?;
+    // let res = reqwest::get("https://jasonleonhard.com/pins/11.json").await?;
+    // println!("Status: {}", res.status());
+    let body = res.text().await?;
+    // println!("Body:\n\n{}", body);
+    println!("{}", body);
     Ok(())
 }
 
-// run without logger
-// cargo run "http://httpbin.org/get"
-// OUTPUT will be:
-// Response: 200 OK
-// Headers: {
-//     "date": "Mon, 28 Dec 2020 04:33:42 GMT",
-//     "content-type": "application/json",
-//     "content-length": "198",
-//     "connection": "keep-alive",
-//     "server": "gunicorn/19.9.0",
-//     "access-control-allow-origin": "*",
-//     "access-control-allow-credentials": "true",
-// }
-// Done!
+// The [cfg(not(target_arch = "wasm32"))] above prevent building the tokio::main function
+// for wasm32 target, because tokio isn't compatible with wasm32.
+// If you aren't building for wasm32, you don't need that line.
+// The two lines below avoid the "'main' function not found" error when building for wasm32 target.
+#[cfg(target_arch = "wasm32")]
+fn main() {}
+
+// RUN: this and get json formatted correctly currently does not take url
+// cargo run | jq
+// RESULT_BELOW:
 // {
-//   "args": {},
-//   "headers": {
-//     "Host": "httpbin.org",
-//     "X-Amzn-Trace-Id": "Root=1-5fe96026-57d6c17516926c7b4ef5f476"
-//   },
-//   "origin": "37.120.149.92",
-//   "url": "http://httpbin.org/get"
+//     "id": 11,
+//     "title": "https://pleasegrab.com",
+//     "description": "An intelligent place to discover, organize and analyze exceptional food outings",
+//     "created_at": "2020-07-08T23:38:49.773Z",
+//     "updated_at": "2020-07-08T23:38:49.773Z",
+//     "image_file_name": "pleasegrab.png",
+//     "image_content_type": "image/png"
 // }
 
-// or with logger
-// RUST_LOG=trace cargo run "http://httpbin.org/get"
-// OUTPUT will be:
-////////// another example
-// https://jasonleonhard.com/pins/11.json
-// Response: 301 Moved Permanently
-// Headers: {
-//     "date": "Mon, 28 Dec 2020 04:43:20 GMT",
-//     "transfer-encoding": "chunked",
-//     "connection": "keep-alive",
-//     "cache-control": "max-age=3600",
-//     "expires": "Mon, 28 Dec 2020 05:43:20 GMT",
-//     "location": "https://jasonleonhard.com/pins/11.json",
-//     "cf-request-id": "0749417e4b00000d3ea338e000000001",
-//     "report-to": "{\"endpoints\":[{\"url\":\"https:\/\/a.nel.cloudflare.com\/report?s=RQfN0aQ1tHVCsZ3f3hjqxGTVHmUWQhp9mvPfdoXkw6si0e3JVB8iuKKx%2BO5NRA5b6NkZrYM%2B1qpopBo3Ux4t8ET%2B4G047jDPSwEk1uplbEAWTA%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
-//     "nel": "{\"report_to\":\"cf-nel\",\"max_age\":604800}",
-//     "x-content-type-options": "nosniff",
-//     "server": "cloudflare",
-//     "cf-ray": "60889eaa199f0d3e-ARN",
-// }
-// Done!
+// but soon we want to pass a url like so
+// cargo run "https://jasonleonhard.com/pins/11" | jq

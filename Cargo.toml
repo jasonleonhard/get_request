@@ -7,6 +7,16 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+futures-util = "0.3.8"
 hyper = "0.13"
 pretty_env_logger = "0.4.0"
+reqwest = {version = "0.10", features = ["json"]}
+serde = {version = "1.0", features = ["derive"]}
+serde_derive = "1.0.118"
+serde_json = {version = "1.0", default-features = false, features = ["alloc"]}
 tokio = {version = "0.2", features = ["full"]}
+
+# crates.io ref section:
+# https://crates.io/crates/serde_derive
+# https://crates.io/crates/serde_json
+# https://crates.io/crates/futures_util
