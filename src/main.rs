@@ -40,6 +40,3 @@ async fn fetch_url(url: hyper::Uri) -> Result<()> {
     }
     Ok(())
 }
-
-#[cfg(target_arch = "wasm32")]
-fn main() {}
