@@ -12,11 +12,15 @@
 
     cargo run "https://jasonleonhard.com/pins/12"
 
+## Run with tracer
+
+    RUST_LOG=trace cargo run "https://jasonleonhard.com/pins/12" | jq
+
+## Optional
+
 This is currently written to allow GET requests of any arbitrary text, JSON or otherwise.
 
 Simply avoid the `| jq` at the end of the command to treat as standard text.
-
-## Optional
 
     brew install jq
     cargo run "https://jasonleonhard.com/pins/12" | jq
